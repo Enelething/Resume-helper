@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Инструменты — ResumeHelper</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html">Услуги</a>
+      <a href="tools.html" class="active">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Инструменты</h1>
+  <p class="lead">Онлайн-сервис на базе ИИ для работы с текстом резюме.</p>
+
+  <section class="good-grid">
+    <div class="left-buttons">
+      <a href="templates.html">
+        <button class="good-btn">Шаблоны резюме</button>
+      </a>
+      <a href="tool-check.html">
+        <button class="good-btn">Проверка грамматики и стиля</button>
+      </a>
+      <a href="tool-keywords.html">
+        <button class="good-btn">Подбор ключевых слов</button>
+      </a>
+      <a href="tool-cover-generator.html">
+        <button class="good-btn">Генератор сопроводительных писем</button>
+      </a>
+    </div>
+
+    <div>
+      <img class="mega-image" src="assets/images/Tools 1.JPG" alt="hero">
+    </div>
+  </section>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- Firebase + Auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>

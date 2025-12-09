@@ -1,0 +1,312 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #ffffff;
+  --text: #0b0b0b;
+  --muted: #6b6b6b;
+  --btn-bg: #0b0f0f;
+  --max-width: 1100px;
+}
+
+/* БАЗА */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ШАПКА */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.main-nav a.active {
+  background: var(--btn-bg);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: var(--btn-bg);
+  color: #fff;
+  padding: 9px 13px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.user-label {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ТИПОГРАФИКА */
+
+.page-title {
+  font-size: 40px;
+  font-weight: 800;
+  margin: 28px 0 8px;
+}
+
+.page-title-medium {
+  font-size: 20px;
+  font-weight: 400;
+  margin: 18px 0 6px;
+}
+
+.page-title-small {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+}
+
+.lead {
+  color: var(--muted);
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+p {
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+ul,
+ol {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+/* СЕТКИ / БЛОКИ */
+
+.good-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.left-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.good-btn,
+.good-btn-short {
+  background: var(--btn-bg);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.good-btn-short {
+  width: 15%;
+}
+
+.good-btn:hover,
+.good-btn-short:hover {
+  transform: translateY(-2px);
+}
+
+.hero-image,
+.mega-image {
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+/* КАРТОЧКИ / РЕВЬЮ */
+
+.card {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(3, 6, 7, 0.04);
+}
+
+.reviews-section {
+  margin-top: 40px;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.review-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 6px 18px rgba(3, 6, 7, 0.04);
+}
+
+.reviewer-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.review-text {
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.stars {
+  color: #f39c12;
+  font-size: 14px;
+}
+
+/* СПЕЦ. КЛАСС ДЛЯ ТЕКСТОВЫХ МАТЕРИАЛОВ */
+
+.material-wrapper {
+  max-width: 760px;
+  margin: 0 auto 40px;
+}
+
+.material-wrapper h1.page-title-small {
+  margin-top: 20px;
+}
+
+.material-wrapper p,
+.material-wrapper ul,
+.material-wrapper ol {
+  font-size: 15px;
+}
+
+/* ФУТЕР */
+
+.footer {
+  max-width: var(--max-width);
+  margin: 64px auto 40px;
+  padding: 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+  border-top: 1px solid #f3f3f3;
+  padding-top: 24px;
+}
+
+/* АДАПТИВ */
+
+@media (max-width: 960px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .main-nav {
+    order: 2;
+  }
+
+  .auth-buttons {
+    order: 1;
+    align-self: flex-end;
+  }
+
+  .page-title {
+    font-size: 32px;
+  }
+
+  .good-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mega-image {
+    margin-top: 12px;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 14px 16px;
+  }
+
+  .page-title {
+    font-size: 26px;
+  }
+
+  .main-nav {
+    gap: 10px;
+  }
+
+  .good-btn,
+  .good-btn-short {
+    font-size: 13px;
+  }
+}

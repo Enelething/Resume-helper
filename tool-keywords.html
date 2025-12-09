@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Подбор ключевых слов — ResumeHelper</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .panel{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(3,6,7,0.06)}
+    textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid #e6e6e6;font-size:15px}
+    .muted{color:#666;font-size:13px}
+    .btn{background:#111;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html">Услуги</a>
+      <a href="tools.html" class="active">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Подбор ключевых слов</h1>
+  <p class="lead">Вставьте текст вакансии и своё резюме — ИИ выделит ключевые слова и навыки.</p>
+
+  <div class="panel">
+    <h3>Текст вакансии</h3>
+    <textarea id="job" placeholder="Вставьте описание вакансии..."></textarea>
+
+    <h3 style="margin-top:10px;">Ваше резюме (опционально)</h3>
+    <textarea id="resume" placeholder="Вставьте резюме, чтобы ИИ подсказал, чего не хватает..."></textarea>
+
+    <button class="btn" style="margin-top:10px;" onclick="runKeywords()">Сгенерировать ключевые слова</button>
+
+    <h3 style="margin-top:16px;">Рекомендованные ключевые слова</h3>
+    <textarea id="result" placeholder="Список ключевых слов и фраз..."></textarea>
+    <p class="muted">Ключ OpenAI берётся из страницы «Перевод резюме». Если его нет — будет сгенерирована демо-заглушка.</p>
+  </div>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- Firebase + Auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai-api.js"></script>
+
+<script>
+async function runKeywords(){
+  const job = document.getElementById("job").value.trim();
+  const resume = document.getElementById("resume").value.trim();
+
+  if(!job) return alert("Нужен хотя бы текст вакансии.");
+
+  if(!aiApi.getKey()){
+    document.getElementById("result").value =
+      "DEMO: ключевые слова (пример)\n\n- project management\n- аналитика данных\n- коммуникация с заказчиком\n- agile / scrum\n- ответственность";
+    return;
+  }
+
+  document.getElementById("result").value = "Генерация...";
+  try{
+    const res = await aiApi.chat([
+      {role:"system", content:"Ты помощник по резюме. Выпиши список ключевых слов и фраз из вакансии. Если дано резюме — отметь, каких ключей не хватает в резюме. Отвечай на русском."},
+      {role:"user", content: "Вакансия:\n" + job + "\n\nРезюме:\n" + (resume || "(не указано)")}
+    ]);
+    document.getElementById("result").value = res.trim();
+  }catch(e){
+    alert("Ошибка ИИ: " + e.message);
+    document.getElementById("result").value = "";
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Редактор документа</title>
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Export libraries -->
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<style>
+#editorArea{
+  width:100%;
+  min-height:500px;
+  padding:16px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  margin-top:12px;
+  font-size:15px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html">Услуги</a>
+      <a href="tools.html">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Редактор</h1>
+  <p class="lead">Изменяйте документ и экспортируйте в PDF или Word.</p>
+
+  <div id="notAuth" class="card" style="display:none;margin-top:18px;">
+    <h2 class="page-title-medium">Вы не авторизованы</h2>
+    <p>Чтобы редактировать документ — войдите.</p>
+  </div>
+
+  <div id="editArea" style="display:none;margin-top:18px;">
+    <input id="docTitle" placeholder="Название документа"
+      style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:16px;font-weight:600">
+
+    <div contenteditable="true" id="editorArea"></div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="exportPDF()">Экспорт PDF</button>
+      <button class="btn-primary" onclick="exportDOCX()">Экспорт DOCX</button>
+      <button class="btn-primary" onclick="importDOCX()">Импорт DOCX</button>
+      <button class="btn-primary" onclick="applyTemplate()">Применить шаблон</button>
+    </div>
+  </div>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/templates-data.js"></script>
+
+<script>
+// --------------------------
+// LOAD DOCUMENT BY id
+// --------------------------
+let DOC_KEY = null;
+let saveTimer = null;
+
+function loadDocument(){
+  const params = new URLSearchParams(location.search);
+  DOC_KEY = params.get("id");
+  if(!DOC_KEY){
+    alert("Документ не найден");
+    return;
+  }
+  const data = JSON.parse(localStorage.getItem(DOC_KEY));
+  if(!data){
+    alert("Документ не найден или удалён");
+    return;
+  }
+
+  document.getElementById("docTitle").value = data.title || "";
+  document.getElementById("editorArea").innerHTML = data.html || "";
+
+  // авто-сохранение
+  saveTimer = setInterval(saveDocument, 3000);
+}
+
+function saveDocument(){
+  if(!DOC_KEY) return;
+  const title = document.getElementById("docTitle").value.trim();
+  const html = document.getElementById("editorArea").innerHTML;
+
+  localStorage.setItem(DOC_KEY, JSON.stringify({
+    title: title || "Без названия",
+    html
+  }));
+}
+
+// --------------------------
+// TEMPLATE APPLY
+// --------------------------
+function applyTemplate(){
+  const key = prompt("Введите ключ шаблона (например built_resume):");
+  if(!key) return;
+  const templates = JSON.parse(localStorage.getItem("TEMPLATES_CACHE") || "[]");
+  const built = window.READY_TEMPLATES?.find(t=>t.key===key);
+  if(!built){
+    alert("Шаблон не найден");
+    return;
+  }
+  document.getElementById("editorArea").innerHTML = built.html;
+}
+
+// --------------------------
+// EXPORT
+// --------------------------
+function exportPDF(){
+  const content = document.getElementById("editorArea").innerHTML;
+  const container = document.createElement("div");
+  container.style.padding = "20px";
+  container.innerHTML = content;
+  document.body.appendChild(container);
+
+  html2pdf().set({
+    margin:20,
+    filename:(document.getElementById("docTitle").value || "document") + ".pdf",
+    html2canvas:{scale:2},
+    jsPDF:{format:"a4"}
+  })
+  .from(container)
+  .save()
+  .then(()=>container.remove());
+}
+
+function exportDOCX(){
+  const content = "<!DOCTYPE html><html><head></head><body>" +
+    document.getElementById("editorArea").innerHTML +
+    "</body></html>";
+
+  const blob = htmlDocx.asBlob(content);
+  saveAs(blob, (document.getElementById("docTitle").value || "document") + ".docx");
+}
+
+// --------------------------
+// IMPORT DOCX
+// --------------------------
+function importDOCX(){
+  alert("Импорт DOCX будет добавлен позже (HTML-поддержка).");
+}
+
+// --------------------------
+document.addEventListener("auth-changed", e=>{
+  if(!e.detail.user){
+    document.getElementById("notAuth").style.display="";
+    document.getElementById("editArea").style.display="none";
+    return;
+  }
+
+  document.getElementById("notAuth").style.display="none";
+  document.getElementById("editArea").style.display="";
+  loadDocument();
+});
+</script>
+
+</body>
+</html>
