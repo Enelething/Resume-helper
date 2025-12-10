@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Генератор сопроводительных писем — ResumeHelper</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .panel{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(3,6,7,0.06)}
+    textarea{width:100%;min-height:180px;padding:12px;border-radius:10px;border:1px solid #e6e6e6;font-size:15px}
+    .muted{color:#666;font-size:13px}
+    .btn{background:#111;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    select,input{padding:8px;border-radius:8px;border:1px solid #ddd}
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html">Услуги</a>
+      <a href="tools.html" class="active">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Генератор сопроводительных писем</h1>
+  <p class="lead">На основе вакансии и вашего опыта ИИ сформирует черновик письма.</p>
+
+  <div class="panel">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+      <input id="position" placeholder="Должность (например, Project Manager)">
+      <input id="company" placeholder="Компания (например, Kaspi.kz)">
+      <select id="tone">
+        <option value="formal">Официальный стиль</option>
+        <option value="neutral" selected>Нейтральный деловой</option>
+        <option value="informal">Более свободный</option>
+      </select>
+    </div>
+
+    <h3>Текст вакансии</h3>
+    <textarea id="job" placeholder="Вставьте описание вакансии..."></textarea>
+
+    <h3 style="margin-top:10px;">Кратко о вашем опыте</h3>
+    <textarea id="experience" placeholder="Опыт, достижения, ключевые проекты..."></textarea>
+
+    <button class="btn" style="margin-top:10px;" onclick="runCover()">Сгенерировать письмо</button>
+
+    <h3 style="margin-top:16px;">Сопроводительное письмо</h3>
+    <textarea id="result" placeholder="Черновик письма — отредактируйте под себя и сохраните."></textarea>
+    <p class="muted">Ключ OpenAI берётся из страницы «Перевод резюме». Если ключ не задан, будет сгенерирован демо-текст.</p>
+  </div>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- Firebase + Auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ai-api.js"></script>
+
+<script>
+async function runCover(){
+  const job = document.getElementById("job").value.trim();
+  const exp = document.getElementById("experience").value.trim();
+  const pos = document.getElementById("position").value.trim();
+  const company = document.getElementById("company").value.trim();
+  const tone = document.getElementById("tone").value;
+
+  if(!job && !exp){
+    return alert("Укажите хотя бы вакансиию или опыт.");
+  }
+
+  if(!aiApi.getKey()){
+    document.getElementById("result").value =
+`DEMO-письмо
+
+Уважаемый HR!
+
+Спасибо за интерес к моей кандидатуре. Здесь будет сгенерирован черновик сопроводительного письма, когда вы укажете OpenAI API key на странице «Перевод резюме».`;
+    return;
+  }
+
+  document.getElementById("result").value = "Генерация письма...";
+  try{
+    const res = await aiApi.chat([
+      {role:"system", content:`Ты пишешь сопроводительные письма. Стиль: ${tone}. Язык — русский. Структура: обращение, 2–3 абзаца о релевантном опыте, связь с задачами вакансии, завершение с благодарностью и готовностью к общению.`},
+      {role:"user", content:
+`Должность: ${pos || "(не указано)"}
+Компания: ${company || "(не указано)"}
+
+Вакансия:
+${job || "(текст вакансии не указан)"}
+
+Опыт кандидата:
+${exp || "(кандидат не указал опыт)"}`}
+    ], {maxTokens: 700});
+    document.getElementById("result").value = res.trim();
+  }catch(e){
+    alert("Ошибка ИИ: " + e.message);
+    document.getElementById("result").value = "";
+  }
+}
+</script>
+
+</body>
+</html>

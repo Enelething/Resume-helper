@@ -1,0 +1,172 @@
+.editor-shell {
+  margin-top: 16px;
+}
+
+.editor-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.editor-title-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.editor-container {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+}
+
+.editor-toolbar {
+  border-bottom: 1px solid #eee;
+  padding: 6px 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.editor-btn {
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.editor-btn.active {
+  background: #111;
+  color: #fff;
+}
+
+.font-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 13px;
+}
+
+.editor-content {
+  flex: 1;
+  padding: 30px 40px;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.6;
+  background: #fff;
+}
+
+.editor-content h1 {
+  font-size: 32px;
+  margin: 18px 0 8px;
+}
+
+.editor-content h2 {
+  font-size: 26px;
+  margin: 16px 0 8px;
+}
+
+.editor-content h3 {
+  font-size: 20px;
+  margin: 14px 0 8px;
+}
+
+/* Popup шаблонов */
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 998;
+  display: none;
+}
+
+.template-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.28);
+  padding: 20px;
+  z-index: 999;
+  width: min(460px, 92vw);
+}
+
+.template-popup h3 {
+  margin: 0 0 10px;
+}
+
+.template-popup p {
+  margin: 4px 0 10px;
+  font-size: 13px;
+  color: #666;
+}
+
+.template-list {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.template-item {
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.template-item-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.template-item-desc {
+  font-size: 12px;
+  color: #777;
+}
+
+.template-item:hover {
+  background: #f7f7f7;
+}
+
+.template-popup-footer {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.template-popup-footer button {
+  background: #f0f0f0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Адаптив */
+
+@media (max-width: 720px) {
+  .editor-content {
+    padding: 18px;
+  }
+
+  .editor-title-input {
+    font-size: 16px;
+  }
+}

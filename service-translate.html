@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Перевод резюме — ResumeHelper</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .panel{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(3,6,7,0.06)}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    textarea{width:100%;min-height:260px;padding:12px;border-radius:10px;border:1px solid #e6e6e6;font-size:15px}
+    select,input{padding:10px;border-radius:8px;border:1px solid #ddd}
+    .muted{color:#666;font-size:13px}
+    .btn{background:#111;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid #ddd;color:#111}
+    .note{background:#fff9e6;padding:10px;border-radius:8px;border:1px solid #f1e0b8;color:#765b00}
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html" class="active">Услуги</a>
+      <a href="tools.html">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Сервис перевода документов</h1>
+  <p class="lead">Откройте сохранённый документ и переведите его на казахский, русский или английский.</p>
+
+  <div class="panel">
+
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <div class="row">
+        <label style="font-weight:600;margin-right:8px">Выберите документ:</label>
+        <select id="docsSelect" style="min-width:260px"></select>
+        <button id="loadDocBtn" class="btn-ghost">Загрузить</button>
+      </div>
+
+      <div style="text-align:right;">
+        <div style="margin-bottom:6px" class="muted">API-ключ OpenAI (хранится только в sessionStorage):</div>
+        <div class="row">
+          <input id="apiKeyInput" placeholder="sk-..." style="min-width:220px">
+          <button id="saveKeyBtn" class="btn">Сохранить ключ</button>
+          <button id="clearKeyBtn" class="btn-ghost">Очистить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-bottom:10px;">
+      <strong>Важно:</strong> ввод ключа в браузере небезопасен. Для продакшна используйте backend-прокси.
+    </div>
+
+    <h3>Исходный документ (HTML / текст)</h3>
+    <textarea id="sourceText" placeholder="Загрузите документ или вставьте текст..."></textarea>
+
+    <div style="display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <label>Стиль перевода:</label>
+      <select id="toneSelect">
+        <option value="neutral">Нейтральный</option>
+        <option value="formal">Официальный</option>
+        <option value="informal">Неформальный</option>
+      </select>
+
+      <label>Язык перевода:</label>
+      <select id="targetLang">
+        <option value="kk">Казахский (kk)</option>
+        <option value="ru" selected>Русский (ru)</option>
+        <option value="en">Английский (en)</option>
+      </select>
+
+      <button id="detectBtn" class="btn">Определить язык</button>
+      <div id="detectedLang" class="muted" style="margin-left:4px"></div>
+    </div>
+
+    <h3 style="margin-top:14px">Перевод</h3>
+    <textarea id="translatedText" placeholder="Здесь появится перевод..."></textarea>
+
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button id="translateBtn" class="btn">Перевести</button>
+      <button id="saveTranslatedBtn" class="btn">Сохранить как документ</button>
+      <button id="exportPdfBtn" class="btn-ghost">Экспорт PDF</button>
+      <button id="exportDocxBtn" class="btn-ghost">Экспорт DOCX</button>
+      <button id="copyBtn" class="btn-ghost">Скопировать</button>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      При ошибках CORS используйте локальный прокси (Node.js) или backend.
+    </div>
+
+  </div>
+
+  <section class="card" style="margin-top:24px;">
+    <h2 class="page-title-medium">Контакты</h2>
+    <p>Если нужен «живой» перевод или проверка носителем языка:</p>
+    <ul>
+      <li>Телефон: <strong>8 (701) 555-66-77</strong></li>
+      <li>Доп. телефон: <strong>8 (708) 000-11-22</strong></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- библиотеки (экспорт) -->
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<!-- Firebase + Auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+
+<script>
+/* ===== Документы за аккаунтом (через userStorage) ===== */
+
+function docKeys(){
+  if(window.userStorage){
+    return window.userStorage.all("doc");
+  }
+  // fallback, если что-то пойдёт не так
+  return Object.keys(localStorage).filter(k=>k.startsWith("doc_")).sort().reverse();
+}
+
+function loadDocs(){
+  const sel = document.getElementById("docsSelect");
+  sel.innerHTML = "";
+  const keys = docKeys();
+  if(!keys.length){
+    const opt = document.createElement("option");
+    opt.text = "Нет сохранённых документов";
+    opt.value = "";
+    sel.appendChild(opt);
+    return;
+  }
+  keys.forEach(k=>{
+    const item = JSON.parse(localStorage.getItem(k));
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.text = item?.title || k;
+    sel.appendChild(opt);
+  });
+  sel.value = keys[0];
+  loadSelectedDoc();
+}
+
+function loadSelectedDoc(){
+  const sel = document.getElementById("docsSelect");
+  if(!sel.value) return;
+  const data = JSON.parse(localStorage.getItem(sel.value));
+  document.getElementById("sourceText").value = data?.html || "";
+}
+
+document.getElementById("loadDocBtn").addEventListener("click", loadSelectedDoc);
+
+/* ===== API key в sessionStorage ===== */
+
+<script>
+  const saved = sessionStorage.getItem("OPENAI_KEY");
+  if(saved){
+    document.getElementById("apiKeyInput").value = saved;
+  }
+</script>
+
+const apiKeyInput = document.getElementById("apiKeyInput");
+const saveKeyBtn = document.getElementById("saveKeyBtn");
+const clearKeyBtn = document.getElementById("clearKeyBtn");
+
+function setApiKey(key){
+  if(!key){
+    sessionStorage.removeItem("OPENAI_KEY");
+    apiKeyInput.value = "";
+    return;
+  }
+  sessionStorage.setItem("OPENAI_KEY", key.trim());
+  apiKeyInput.value = "•••••••••• (saved in session)";
+}
+function getApiKey(){
+  return sessionStorage.getItem("OPENAI_KEY") || "";
+}
+
+saveKeyBtn.addEventListener("click", ()=>{
+  const raw = apiKeyInput.value.trim();
+  if(!raw) return alert("Вставьте OpenAI API key (sk-...)");
+  if(!raw.startsWith("sk-")) return alert("Ключ должен начинаться с sk-...");
+  setApiKey(raw);
+});
+
+clearKeyBtn.addEventListener("click", ()=>{
+  sessionStorage.removeItem("OPENAI_KEY");
+  apiKeyInput.value = "";
+  alert("Ключ очищен");
+});
+
+/* ===== OpenAI helper ===== */
+
+const PROXY_URL = ""; // если есть backend-прокси — укажи здесь
+
+async function openaiFetch(path, body){
+  const key = getApiKey();
+  if(!key && !PROXY_URL){
+    throw new Error("API key не задан. Укажите ключ или прокси.");
+  }
+
+  const url = PROXY_URL
+    ? PROXY_URL + "?path=" + encodeURIComponent(path)
+    : "https://api.openai.com" + path;
+
+  const headers = {
+    "Content-Type":"application/json",
+    ...(PROXY_URL ? {} : { "Authorization": "Bearer " + key })
+  };
+
+  const resp = await fetch(url, {
+    method:"POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if(!resp.ok){
+    const text = await resp.text();
+    throw new Error("OpenAI error " + resp.status + ": " + text);
+  }
+  return resp.json();
+}
+
+async function detectLanguageWithOpenAI(text){
+  const sys = "You detect language. Reply only with code: ru, en, kk or other.";
+  const userPrompt = "Detect language of this text:\\n\\n" + text.slice(0,1500);
+
+  const body = {
+    model: "gpt-4o-mini",
+    messages: [
+      {role:"system", content: sys},
+      {role:"user", content: userPrompt}
+    ],
+    temperature: 0
+  };
+
+  const json = await openaiFetch("/v1/chat/completions", body);
+  const out = json.choices?.[0]?.message?.content || "";
+  const m = out.toLowerCase().match(/(ru|en|kk)/);
+  return m ? m[1] : "other";
+}
+
+async function translateWithOpenAI(text, targetLang, tone){
+  const sys = `You are a professional translator. Translate into ${targetLang}, keep basic HTML structure, use ${tone} tone.`;
+  const userPrompt = "Text to translate:\\n\\n" + text.slice(0,4000);
+
+  const body = {
+    model: "gpt-4o-mini",
+    messages: [
+      {role:"system", content: sys},
+      {role:"user", content: userPrompt}
+    ],
+    temperature: 0.2,
+    max_tokens: 4000
+  };
+
+  const json = await openaiFetch("/v1/chat/completions", body);
+  return (json.choices?.[0]?.message?.content || "").trim();
+}
+
+/* ===== Обработчики UI ===== */
+
+document.getElementById("detectBtn").addEventListener("click", async ()=>{
+  const txt = document.getElementById("sourceText").value.trim();
+  if(!txt) return alert("Нет текста для анализа");
+  try{
+    document.getElementById("detectedLang").textContent = "Определяется...";
+    const code = await detectLanguageWithOpenAI(txt);
+    const label =
+      code==="ru" ? "Русский" :
+      code==="en" ? "Английский" :
+      code==="kk" ? "Казахский" : "Не определён";
+    document.getElementById("detectedLang").textContent = label;
+  }catch(e){
+    console.error(e);
+    alert("Ошибка определения языка: " + e.message);
+    document.getElementById("detectedLang").textContent = "Ошибка";
+  }
+});
+
+document.getElementById("translateBtn").addEventListener("click", async ()=>{
+  const txt = document.getElementById("sourceText").value.trim();
+  if(!txt) return alert("Нет текста для перевода");
+
+  const target = document.getElementById("targetLang").value;
+  const tone = document.getElementById("toneSelect").value;
+
+  if(!getApiKey() && !PROXY_URL){
+    if(!confirm("Ключ не задан. Выполнить демо-псевдоперевод?")){
+      return;
+    }
+    document.getElementById("translatedText").value =
+      "-- DEMO ПЕРЕВОД (" + target + ") --\\n\\n" + txt;
+    return;
+  }
+
+  try{
+    document.getElementById("translatedText").value = "Перевод выполняется...";
+    const res = await translateWithOpenAI(txt, target, tone);
+    document.getElementById("translatedText").value = res;
+  }catch(e){
+    console.error(e);
+    alert("Ошибка перевода: " + e.message);
+    document.getElementById("translatedText").value = "";
+  }
+});
+
+document.getElementById("saveTranslatedBtn").addEventListener("click", ()=>{
+  const txt = document.getElementById("translatedText").value.trim();
+  if(!txt) return alert("Нет перевода для сохранения");
+
+  const title = "Перевод — " + new Date().toLocaleString();
+  const id = Date.now();
+  const key = window.userStorage
+    ? window.userStorage.key("doc", id)
+    : "doc_" + id;
+
+  localStorage.setItem(key, JSON.stringify({title, html: txt}));
+  alert("Перевод сохранён как новый документ");
+  loadDocs();
+});
+
+document.getElementById("copyBtn").addEventListener("click", ()=>{
+  const txt = document.getElementById("translatedText").value;
+  if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>alert("Скопировано"));
+});
+
+/* Экспорт PDF */
+document.getElementById("exportPdfBtn").addEventListener("click", ()=>{
+  const content = document.getElementById("translatedText").value;
+  if(!content) return alert("Перевод пуст");
+  const container = document.createElement("div");
+  container.style.padding = "20px";
+  container.style.background = "#fff";
+  container.innerHTML = content.replace(/\\n/g,"<br>");
+  document.body.appendChild(container);
+  const opt = {
+    margin:20,
+    filename:"translation.pdf",
+    html2canvas:{scale:2},
+    jsPDF:{format:"a4"}
+  };
+  html2pdf().set(opt).from(container).save().then(()=>container.remove());
+});
+
+/* Экспорт DOCX */
+document.getElementById("exportDocxBtn").addEventListener("click", ()=>{
+  const content = document.getElementById("translatedText").value;
+  if(!content) return alert("Перевод пуст");
+  const html = "<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>" +
+    content.replace(/\\n/g,"<br>") +
+    "</body></html>";
+  const blob = htmlDocx.asBlob(html);
+  saveAs(blob, "translation.docx");
+});
+
+/* Инициализация списка документов */
+document.addEventListener("DOMContentLoaded", loadDocs);
+</script>
+
+</body>
+</html>

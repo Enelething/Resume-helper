@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Шаблоны документов — ResumeHelper</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    .card-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:18px;
+      margin-top:20px;
+    }
+    .template-card{
+      border:1px solid #eee;
+      padding:18px;
+      border-radius:12px;
+      background:white;
+      box-shadow:0 6px 16px rgba(0,0,0,0.05);
+    }
+    .template-card h3{margin:0 0 6px;font-size:18px}
+    .template-card p{color:#666;font-size:14px}
+    .template-actions{
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+    .danger{background:#c0392b}
+    input,textarea{
+      width:100%;
+      padding:8px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      font-size:14px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ResumeHelper</div>
+  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <nav class="main-nav">
+      <a href="index.html">Главная</a>
+      <a href="services.html">Услуги</a>
+      <a href="tools.html" class="active">Инструменты</a>
+      <a href="materials.html">Материалы</a>
+      <a href="account.html">Кабинет</a>
+      <a href="reviews.html">Отзывы</a>
+    </nav>
+    <div class="auth-buttons"></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Шаблоны</h1>
+  <p class="lead">Используйте готовые шаблоны или создайте свои и откройте их в редакторе.</p>
+
+  <h2 class="page-title-medium">Создать новый шаблон</h2>
+  <div class="card" style="padding:18px;">
+    <input id="tplName" placeholder="Название шаблона">
+    <textarea id="tplContent" rows="5" placeholder="HTML шаблона (поддерживаются заголовки, списки, абзацы)"></textarea>
+    <button class="btn-primary" onclick="saveTemplate()">Сохранить шаблон</button>
+  </div>
+
+  <h2 class="page-title-medium" style="margin-top:32px;">Готовые шаблоны</h2>
+  <div id="readyTemplates" class="card-grid"></div>
+
+  <h2 class="page-title-medium" style="margin-top:32px;">Ваши шаблоны</h2>
+  <div id="templateList" class="card-grid"></div>
+</main>
+
+<footer class="footer container">© 2025 ResumeHelper</footer>
+
+<!-- Firebase + Auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/templates-data.js"></script>
+
+<script>
+function renderReadyTemplates(){
+  const box = document.getElementById("readyTemplates");
+  box.innerHTML = "";
+
+  (window.READY_TEMPLATES || []).forEach(t=>{
+    const div = document.createElement("div");
+    div.className = "template-card";
+    div.innerHTML = `
+      <h3>${t.title}</h3>
+      <p>${t.html.replace(/<[^>]+>/g,"").slice(0,120)}...</p>
+      <div class="template-actions">
+        <button class="btn-primary" onclick="useBuiltTemplate('${t.key}')">Открыть в редакторе</button>
+      </div>`;
+    box.appendChild(div);
+  });
+}
+
+function useBuiltTemplate(key){
+  location.href = "editor.html?template=" + encodeURIComponent(key);
+}
+
+/* Пользовательские шаблоны — хранятся за аккаунтом */
+function loadUserTemplates(){
+  const box = document.getElementById("templateList");
+  box.innerHTML = "";
+
+  if(!window.userStorage){
+    box.innerHTML = "<p style='color:#666'>Хранилище не готово</p>";
+    return;
+  }
+
+  const keys = window.userStorage.all("tpl");
+
+  if(!keys.length){
+    box.innerHTML = "<p style='color:#666'>У вас ещё нет сохранённых шаблонов</p>";
+    return;
+  }
+
+  keys.forEach(k=>{
+    const d = JSON.parse(localStorage.getItem(k));
+    const div = document.createElement("div");
+    div.className = "template-card";
+    div.innerHTML = `
+      <h3>${d.title}</h3>
+      <p>${(d.html||"").replace(/<[^>]+>/g,"").slice(0,120)}...</p>
+      <div class="template-actions">
+        <button class="btn-primary" onclick="openUserTemplate('${k}')">Открыть в редакторе</button>
+        <button class="btn-primary danger" onclick="deleteTemplate('${k}')">Удалить</button>
+      </div>`;
+    box.appendChild(div);
+  });
+}
+
+function openUserTemplate(key){
+  location.href = "editor.html?template=" + encodeURIComponent(key);
+}
+
+function saveTemplate(){
+  const name = tplName.value.trim();
+  const html = tplContent.value.trim();
+  if(!name || !html) return alert("Заполните название и содержимое шаблона");
+
+  const id = Date.now();
+  const key = window.userStorage
+    ? window.userStorage.key("tpl", id)
+    : "tpl_" + id;
+
+  localStorage.setItem(key, JSON.stringify({title:name, html}));
+  tplName.value = "";
+  tplContent.value = "";
+  loadUserTemplates();
+}
+
+function deleteTemplate(key){
+  if(confirm("Удалить шаблон?")){
+    localStorage.removeItem(key);
+    loadUserTemplates();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  renderReadyTemplates();
+  loadUserTemplates();
+});
+</script>
+
+</body>
+</html>
