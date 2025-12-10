@@ -89,7 +89,7 @@ function updateAccount(user){
   if(user.photoURL){
     document.getElementById("userPhoto").src = user.photoURL;
   }else{
-    document.getElementById("userPhoto").src = "assets/images/default-user.png";
+    document.getElementById("userPhoto").src = "images/Default-user.png";
   }
 
   const docs = window.userStorage.all("doc");
@@ -118,3 +118,4 @@ function editProfile(){
 
 </body>
 </html>
+
