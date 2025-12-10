@@ -310,3 +310,53 @@ ol {
     font-size: 13px;
   }
 }
+
+/* ГЛАВНАЯ СЕТКА ШАПКИ */
+.header {
+  display: flex;
+  justify-content: space-between; /* меню слева + кнопки справа */
+  align-items: center;
+  gap: 24px;
+  flex-wrap: nowrap;
+}
+
+/* ЛЕВАЯ ЧАСТЬ ШАПКИ */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-shrink: 1;
+  flex-wrap: nowrap;
+}
+
+.main-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ПРАВАЯ ЧАСТЬ — ВСЕГДА СПРАВА */
+.auth-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;      /* не сжимать/не переносить */
+}
+
+@media (max-width: 640px) {
+
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .header-left {
+    width: 100%;              /* бренд + меню в одной строке */
+    justify-content: flex-start;
+  }
+
+  .auth-buttons {
+    justify-self: flex-end;
+    margin-left: auto;        /* толкаем вправо */
+  }
+}
