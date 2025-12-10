@@ -99,46 +99,43 @@
 
 <main class="container">
 
-  <!-- Not authorized -->
   <div id="notAuth">
-    <h2 style="margin-top:40px;">Авторизуйтесь чтобы редактировать документ</h2>
+  <h2 style="margin-top:40px;">Авторизуйтесь чтобы редактировать документ</h2>
+</div>
+
+<div id="editorShell" class="editor-shell" style="display:none;">
+  <input id="docTitle" placeholder="Без названия">
+
+  <div id="toolbar">
+    <select class="ql-header">
+      <option value="1"></option>
+      <option value="2"></option>
+      <option value="3"></option>
+      <option selected></option>
+    </select>
+
+    <button class="ql-bold"></button>
+    <button class="ql-italic"></button>
+    <button class="ql-underline"></button>
+
+    <button class="ql-align" value=""></button>
+    <button class="ql-align" value="center"></button>
+    <button class="ql-align" value="right"></button>
+    <button class="ql-align" value="justify"></button>
+
+    <button class="ql-list" value="bullet"></button>
+    <button class="ql-list" value="ordered"></button>
+
+    <select class="ql-font"></select>
+    <select class="ql-size"></select>
+
+    <button id="btnTemplates" type="button">📄 Шаблоны</button>
+    <button id="btnPDF" type="button">PDF</button>
+    <button id="btnDOCX" type="button">Word</button>
   </div>
 
-  <!-- Auth editor -->
-  <div id="editorShell" class="editor-shell">
-    <input id="docTitle" placeholder="Без названия">
-
-    <!-- Google Docs style toolbar -->
-    <div id="toolbar">
-      <select class="ql-header">
-        <option value="1"></option>
-        <option value="2"></option>
-        <option value="3"></option>
-        <option selected></option>
-      </select>
-      <button class="ql-bold"></button>
-      <button class="ql-italic"></button>
-      <button class="ql-underline"></button>
-
-      <button class="ql-align" value=""></button>
-      <button class="ql-align" value="center"></button>
-      <button class="ql-align" value="right"></button>
-      <button class="ql-align" value="justify"></button>
-
-      <button class="ql-list" value="bullet"></button>
-      <button class="ql-list" value="ordered"></button>
-
-      <select class="ql-font"></select>
-      <select class="ql-size"></select>
-
-      <button id="btnTemplates" type="button">📄 Шаблоны</button>
-
-      <button id="btnPDF" type="button">PDF</button>
-      <button id="btnDOCX" type="button">Word</button>
-    </div>
-
-    <div id="editor"></div>
-  </div>
+  <div id="editor"></div>
+</div>
 
 </main>
 
@@ -153,3 +150,4 @@
 </div>
 
 <script src="js/e
+
