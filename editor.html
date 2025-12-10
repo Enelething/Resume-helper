@@ -1,93 +1,23 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Редактор — ResumeHelper</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор – ResumeHelper</title>
 
+  <!-- Styles -->
   <link rel="stylesheet" href="css/style.css">
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/auth.js"></script>
 
   <!-- Quill -->
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-  <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
 
-  <!-- Export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.4.1/html-docx.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-
-  <script src="js/editor.js"></script>
-
-  <style>
-    .editor-shell {
-      display: none;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    #docTitle {
-      width: 100%;
-      font-size: 22px;
-      font-weight: 600;
-      border: none;
-      outline: none;
-      margin-bottom: 10px;
-      padding: 6px 4px;
-    }
-
-    #toolbar {
-      margin-bottom: 10px;
-    }
-    #editor {
-      background: #fff;
-      min-height: 600px;
-      border: 1px solid #ddd;
-    }
-
-    .popup-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.2);
-    }
-    .popup {
-      display:none;
-      position: fixed;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      min-width: 300px;
-      background: #fff;
-      padding:20px;
-      border-radius:8px;
-    }
-
-    .template-item {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      margin-bottom: 6px;
-      border-radius: 6px;
-      cursor:pointer;
-    }
-    .template-item:hover {
-      background:#fafafa;
-    }
-  </style>
 </head>
-
 <body>
+
 <header class="header">
-  <div class="brand">ResumeHelper</div>
-  <div style="display:flex;gap:20px;">
-    <nav class="main-nav">
+  <div class="container header-container">
+    <a class="logo" href="index.html">ResumeHelper</a>
+    <nav class="nav">
       <a href="index.html">Главная</a>
       <a href="services.html">Услуги</a>
       <a href="tools.html">Инструменты</a>
@@ -95,62 +25,91 @@
       <a href="account.html">Кабинет</a>
       <a href="reviews.html">Отзывы</a>
     </nav>
-    <div class="auth-buttons"></div>
   </div>
 </header>
 
 <main class="container">
 
-  <div id="notAuth">
-  <h2 style="margin-top:40px;">Авторизуйтесь чтобы редактировать документ</h2>
-</div>
-
-<div id="editorShell" class="editor-shell" style="display:none;">
-  <input id="docTitle" placeholder="Без названия">
-
-  <div id="toolbar">
-    <select class="ql-header">
-      <option value="1"></option>
-      <option value="2"></option>
-      <option value="3"></option>
-      <option selected></option>
-    </select>
-
-    <button class="ql-bold"></button>
-    <button class="ql-italic"></button>
-    <button class="ql-underline"></button>
-
-    <button class="ql-align" value=""></button>
-    <button class="ql-align" value="center"></button>
-    <button class="ql-align" value="right"></button>
-    <button class="ql-align" value="justify"></button>
-
-    <button class="ql-list" value="bullet"></button>
-    <button class="ql-list" value="ordered"></button>
-
-    <select class="ql-font"></select>
-    <select class="ql-size"></select>
-
-    <button id="btnTemplates" type="button">📄 Шаблоны</button>
-    <button id="btnPDF" type="button">PDF</button>
-    <button id="btnDOCX" type="button">Word</button>
+  <!-- Блок для гостей -->
+  <div id="notAuth" style="margin-top:40px;">
+    <h2>Авторизуйтесь чтобы редактировать документ</h2>
   </div>
 
-  <div id="editor"></div>
-</div>
+  <!-- Редактор для авторизованных -->
+  <div id="editorShell" class="editor-shell" style="display:none; margin-top:20px;">
+
+    <input id="docTitle" class="doc-title" placeholder="Без названия">
+
+    <div id="toolbar">
+      <select class="ql-header">
+        <option value="1"></option>
+        <option value="2"></option>
+        <option value="3"></option>
+        <option selected></option>
+      </select>
+
+      <button class="ql-bold"></button>
+      <button class="ql-italic"></button>
+      <button class="ql-underline"></button>
+
+      <button class="ql-list" value="ordered"></button>
+      <button class="ql-list" value="bullet"></button>
+
+      <button class="ql-align" value=""></button>
+      <button class="ql-align" value="center"></button>
+      <button class="ql-align" value="right"></button>
+      <button class="ql-align" value="justify"></button>
+
+      <select class="ql-font"></select>
+      <select class="ql-size"></select>
+
+      <button id="btnTemplates" type="button">📄 Шаблоны</button>
+      <button id="btnPDF" type="button">PDF</button>
+      <button id="btnDOCX" type="button">Word</button>
+    </div>
+
+    <div id="editor" style="min-height:600px;"></div>
+
+  </div>
 
 </main>
 
-<footer class="footer container">© 2025 ResumeHelper</footer>
+<footer class="footer container">
+  © 2025 ResumeHelper
+</footer>
 
-<!-- Templates popup -->
-<div id="overlay" class="popup-overlay"></div>
-<div id="templatesPopup" class="popup">
+<!-- Overlay + Popup -->
+<div id="overlay" class="popup-overlay" style="display:none;"></div>
+
+<div id="templatesPopup" class="popup" style="display:none;">
   <h3>Шаблоны</h3>
   <div id="templatesList"></div>
   <button onclick="closeTemplates()">Закрыть</button>
 </div>
 
-<script src="js/e
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+
+<!-- Quill -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+
+<!-- Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.4.1/html-docx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
+<!-- Templates Data -->
+<script src="js/templates-data.js"></script>
+
+<!-- Editor Logic -->
+<script src="js/editor.js"></script>
+
+</body>
+</html>
 
 
