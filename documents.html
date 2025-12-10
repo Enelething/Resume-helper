@@ -25,86 +25,104 @@
 
 <main class="container">
   <h1 class="page-title">Мои документы</h1>
-  <p class="lead">Ваши сохранённые документы</p>
+  <p class="lead">Все документы сохраняются за вашим аккаунтом</p>
 
-  <div id="notAuth" class="card" style="display:none;margin-top:18px;">
-    <h2 class="page-title-medium">Вы не авторизованы</h2>
-    <p>Чтобы видеть свои документы — войдите.</p>
-    <button class="btn-primary" onclick="auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())">Войти</button>
-  </div>
+  <!-- КНОПКА СОЗДАНИЯ -->
+  <button class="btn-primary" onclick="createNewDoc()" style="margin-top:10px">
+    Создать документ
+  </button>
 
-  <div id="docsArea" style="display:none;margin-top:18px;">
-    <button class="btn-primary" style="margin-bottom:14px;" onclick="createDoc()">Создать документ</button>
-
-    <div id="docsList" class="review-list"></div>
-  </div>
+  <!-- СПИСОК -->
+  <div id="docs" class="doc-list"></div>
 </main>
 
 <footer class="footer container">© 2025 ResumeHelper</footer>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="js/firebase-config.js"></script>
-<script src="js/auth.js"></script>
-
 <script>
-function renderDocs(){
-  const user = window.CURRENT_USER;
-  if(!user){
-    document.getElementById("notAuth").style.display = "";
-    document.getElementById("docsArea").style.display = "none";
-    return;
-  }
+  let CURRENT_USER = null;
 
-  document.getElementById("notAuth").style.display = "none";
-  document.getElementById("docsArea").style.display = "";
+  // === 1. Ждем авторизацию ===
+  document.addEventListener("auth-changed", async e => {
+    CURRENT_USER = e.detail.user;
+    if (!CURRENT_USER) return;
 
-  const keys = window.userStorage.all("doc");
-  const list = document.getElementById("docsList");
-  list.innerHTML = "";
-
-  if(!keys.length){
-    list.innerHTML = "<p style='color:#666'>У вас ещё нет документов</p>";
-    return;
-  }
-
-  keys.forEach(k=>{
-    const item = JSON.parse(localStorage.getItem(k));
-    const div = document.createElement("div");
-    div.className = "review-card";
-
-    div.innerHTML = `
-      <div class="reviewer-name">${item.title || "Без названия"}</div>
-      <div class="review-text" style="margin-bottom:10px;">${(item.html||"").replace(/<[^>]+>/g,'').slice(0,100)}...</div>
-      <button class="btn-primary" style="margin-right:10px;" onclick="openDoc('${k}')">Открыть</button>
-      <button class="btn-primary" onclick="deleteDoc('${k}')" style="background:#c0392b">Удалить</button>
-    `;
-
-    list.appendChild(div);
+    loadDocs();
   });
-}
 
-function openDoc(key){
-  location.href = "editor.html?id=" + encodeURIComponent(key);
-}
+  // === 2. Загрузка документов из Firestore ===
+  async function loadDocs() {
+    const box = document.getElementById("docs");
+    box.innerHTML = "<p>Загрузка...</p>";
 
-function deleteDoc(key){
-  if(confirm("Удалить документ?")){
-    localStorage.removeItem(key);
-    renderDocs();
+    try {
+      const snap = await db.collection("users")
+        .doc(CURRENT_USER.uid)
+        .collection("documents")
+        .orderBy("updated", "desc")
+        .get();
+
+      if (snap.empty) {
+        box.innerHTML = "<p class='empty'>Документов пока нет</p>";
+        return;
+      }
+
+      box.innerHTML = "";
+
+      snap.forEach(doc => {
+        const data = doc.data();
+
+        const card = document.createElement("div");
+        card.className = "doc-card";
+
+        card.innerHTML = `
+          <div>
+            <strong>${data.title}</strong><br>
+            <span>${new Date(data.updated).toLocaleString()}</span>
+          </div>
+          <div>
+            <button class="doc-btn-open" onclick="openDoc('${doc.id}')">
+              Открыть
+            </button>
+            <button class="doc-btn-delete" onclick="deleteDoc('${doc.id}')">
+              Удалить
+            </button>
+          </div>
+        `;
+
+        box.appendChild(card);
+      });
+
+    } catch(e) {
+      box.innerHTML = "<p class='empty'>Ошибка загрузки</p>";
+      console.error(e);
+    }
   }
-}
 
-function createDoc(){
-  const title = prompt("Название документа:");
-  const key = window.userStorage.key("doc", Date.now());
-  localStorage.setItem(key, JSON.stringify({title: title||"Новый документ", html:""}));
-  location.href = "editor.html?id=" + encodeURIComponent(key);
-}
+  // === 3. Открыть документ ===
+  function openDoc(id) {
+    location.href = "editor.html?id=" + id;
+  }
 
-document.addEventListener("auth-changed", ()=>renderDocs());
+  // === 4. Удалить документ ===
+  async function deleteDoc(id) {
+    if (!confirm("Удалить документ?")) return;
+
+    await db.collection("users")
+      .doc(CURRENT_USER.uid)
+      .collection("documents")
+      .doc(id)
+      .delete();
+
+    loadDocs();
+  }
+
+  // === 5. Создать документ ===
+  function createNewDoc() {
+    const id = "doc_" + Date.now();
+    location.href = "editor.html?id=" + id;
+  }
 </script>
 
 </body>
 </html>
+
