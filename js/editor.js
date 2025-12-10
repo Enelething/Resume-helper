@@ -2,25 +2,31 @@ let CURRENT_USER = null
 let CURRENT_DOC_ID = null
 let quill = null
 
-// Ждём авторизацию
-document.addEventListener("auth-changed", async (e) => {
-  CURRENT_USER = e.detail.user
+// Запускаем editor если user уже есть
+firebase.auth().onAuthStateChanged(user => {
+  if (user) startEditor(user)
+})
 
-  if (!CURRENT_USER) return
+// Ловим custom event
+document.addEventListener("auth-changed", e => {
+  startEditor(e.detail.user)
+})
+
+function startEditor(user) {
+  if (!user) return
+
+  CURRENT_USER = user
   document.getElementById("notAuth").style.display = "none"
   document.getElementById("editorShell").style.display = ""
 
   initEditor()
-})
+}
 
 async function initEditor() {
   const params = new URLSearchParams(location.search)
-  CURRENT_DOC_ID = params.get("id")
+  CURRENT_DOC_ID = params.get("id") || ("doc_" + Date.now())
 
-  if (!CURRENT_DOC_ID) {
-    CURRENT_DOC_ID = "doc_" + Date.now()
-    history.replaceState({}, "", "?id=" + CURRENT_DOC_ID)
-  }
+  history.replaceState({}, "", "?id=" + CURRENT_DOC_ID)
 
   const data = await loadDocument()
 
@@ -46,7 +52,6 @@ async function initEditor() {
   loadTemplates()
 }
 
-// load Firestore doc
 async function loadDocument() {
   let data = null
 
@@ -68,7 +73,6 @@ async function loadDocument() {
   return data
 }
 
-// save
 async function saveDocument() {
   if (!CURRENT_USER) return
 
@@ -90,7 +94,6 @@ async function saveDocument() {
   localStorage.setItem(CURRENT_DOC_ID, JSON.stringify(payload))
 }
 
-// export
 function exportDOCX() {
   const html = "<html><body>" + quill.root.innerHTML + "</body></html>"
   const blob = window.htmlDocx.asBlob(html)
@@ -104,7 +107,6 @@ function exportPDF() {
   html2pdf().from(elem).set({ filename: 'document.pdf' }).save().then(() => elem.remove())
 }
 
-// templates
 function openTemplates() {
   document.getElementById("overlay").style.display = "block"
   document.getElementById("templatesPopup").style.display = ""
@@ -123,7 +125,7 @@ function loadTemplates() {
   const templates = [
     { name: "Пустой документ", html: "<p><br></p>" },
     { name: "Резюме", html: "<h1>Имя Фамилия</h1><p>Контакты...</p>" },
-    { name: "Сопроводительное", html: "<p>Уважаемый HR...</p>" }
+    { name: "Сопроводительное письмо", html: "<p>Уважаемый HR!</p>" }
   ]
 
   templates.forEach(t => {
@@ -139,7 +141,6 @@ function loadTemplates() {
   })
 }
 
-// helpers
 function debounce(fn, ms) {
   let timer
   return (...args) => {
