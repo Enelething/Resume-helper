@@ -1,219 +1,156 @@
-// ==== Глобальные переменные ====
-let editor = null;
-let CURRENT_USER = null;
-let DOC_KEY = null;
+// ==== Firebase (global compat) ====
+// firebase & db уже должны быть подключены из auth.js
 
-// ==== Событие авторизации ====
+let CURRENT_USER = null;
+let CURRENT_DOC_ID = null;
+let quill = null;
+
+// ==== слушаем auth ====
 document.addEventListener("auth-changed", async e => {
   CURRENT_USER = e.detail.user;
+  if (!CURRENT_USER) return;
 
-  const notAuth = document.getElementById("notAuth");
-  const shell = document.getElementById("editorShell");
-
-  if (!CURRENT_USER) {
-    notAuth.style.display = "";
-    shell.style.display = "none";
-    return;
-  }
-
-  notAuth.style.display = "none";
-  shell.style.display = "";
-
-  if (!editor) {
-    await initEditor();
-  }
+  initEditor();
 });
 
-// ==== Инициализация ====
+// ==== Editor init ====
 async function initEditor() {
+  // читаем id из URL
   const params = new URLSearchParams(location.search);
-  DOC_KEY = params.get("id");
-  if (!DOC_KEY) {
-    alert("Ошибка: editor.html?id=ключ_документа");
-    return;
+  CURRENT_DOC_ID = params.get("id");
+
+  // создаём новый если не указан
+  if (!CURRENT_DOC_ID) {
+    CURRENT_DOC_ID = "doc_" + Date.now();
+    history.replaceState({}, "", "?id=" + CURRENT_DOC_ID);
   }
 
-  // 1) Загружаем из Firestore
+  // init Quill
+  quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: { toolbar: '#toolbar' }
+  });
+
+  // загрузка документа
+  await loadDocument();
+
+  // авто-сохранение
+  quill.on('text-change', debounce(saveDocument, 600));
+
+  document.getElementById("docTitle").addEventListener("input", debounce(saveDocument, 600));
+
+  // UI кнопки
+  bindUI();
+}
+
+// ==== загрузка документа ====
+async function loadDocument() {
   let data = null;
+
+  // 1. Firebase
   try {
-    const snap = await db
-      .collection("users").doc(CURRENT_USER.uid)
-      .collection("documents").doc(DOC_KEY)
+    const snap = await db.collection("users")
+      .doc(CURRENT_USER.uid)
+      .collection("documents")
+      .doc(CURRENT_DOC_ID)
       .get();
-    if (snap.exists) {
-      data = snap.data();
-    }
+
+    if (snap.exists) data = snap.data();
   } catch(e) {
-    console.error("Firestore load error:", e);
+    console.error(e);
   }
 
-  // 2) Если нет — localStorage (старые документы)
+  // 2. fallback local
   if (!data) {
-    const raw = localStorage.getItem(DOC_KEY);
+    const raw = localStorage.getItem(CURRENT_DOC_ID);
     if (raw) data = JSON.parse(raw);
   }
 
-  const titleInput = document.getElementById("docTitle");
-  titleInput.value = (data && data.title) || "";
-
-  // ==== Создаём редактор ====
-  editor = new tiptapCore.Editor({
-    element: document.querySelector("#editor"),
-    extensions: [
-      tiptapStarterKit.StarterKit.configure({
-        heading: { levels: [1,2,3] }
-      }),
-      tiptapExtensionUnderline.Underline,
-      tiptapExtensionTextAlign.TextAlign.configure({
-        types: ["heading", "paragraph"]
-      })
-    ],
-    content: (data && data.html) || "<p></p>",
-    onUpdate: () => {
-      saveDocument();
-      updateToolbar();
-    }
-  });
-
-  // title auto save
-  titleInput.addEventListener("input", saveDocument);
-
-  // toolbar listeners
-  initToolbar();
-  renderTemplatePopup();
-
-  // default font
-  document.querySelector(".editor-content").style.fontFamily =
-    document.getElementById("fontSelect").value;
+  // устанавливаем данные
+  if (data) {
+    document.getElementById("docTitle").value = data.title;
+    quill.setContents(quill.clipboard.convert(data.html));
+  } else {
+    document.getElementById("docTitle").value = "";
+  }
 }
 
-// ==== Сохранение ====
-async function saveDocument() {
-  if (!editor || !CURRENT_USER || !DOC_KEY) return;
 
+// ==== сохранение ====
+async function saveDocument() {
+  if (!quill || !CURRENT_USER) return;
+
+  const html = quill.root.innerHTML;
   const title = document.getElementById("docTitle").value.trim();
-  const html = editor.getHTML();
+
   const payload = {
-    title: title || "Без названия",
     html,
+    title: title || "Без названия",
     updated: Date.now()
   };
 
-  // Local
-  localStorage.setItem(DOC_KEY, JSON.stringify(payload));
-
   // Firestore
   try {
-    await db.collection("users").doc(CURRENT_USER.uid)
-      .collection("documents").doc(DOC_KEY)
-      .set(payload, { merge:true });
+    await db.collection("users")
+      .doc(CURRENT_USER.uid)
+      .collection("documents")
+      .doc(CURRENT_DOC_ID)
+      .set(payload, { merge: true });
   } catch(e) {
-    console.error("Firestore save error:", e);
+    console.error("save error", e);
   }
+
+  // local backup
+  localStorage.setItem(CURRENT_DOC_ID, JSON.stringify(payload));
 }
 
-// ==== Toolbar ====
-function initToolbar() {
-  const toolbar = document.querySelector(".editor-toolbar");
-  toolbar.addEventListener("click", e => {
-    const btn = e.target.closest(".editor-btn");
-    if (!btn) return;
-    handleToolbar(btn.dataset.action);
-  });
 
-  editor.on("selectionUpdate", updateToolbar);
-  editor.on("transaction", updateToolbar);
-}
+// ==== UI функции ====
+function bindUI() {
+  document.getElementById("saveLocal")
+    .addEventListener("click", saveDocument);
 
-function handleToolbar(action) {
-  const chain = editor.chain().focus();
-  switch(action) {
-    case "undo": chain.undo().run(); break;
-    case "redo": chain.redo().run(); break;
+  document.getElementById("exportDocx")
+    .addEventListener("click", exportDocx);
 
-    case "bold": chain.toggleBold().run(); break;
-    case "italic": chain.toggleItalic().run(); break;
-    case "underline": chain.toggleUnderline().run(); break;
+  document.getElementById("exportPdf")
+    .addEventListener("click", exportPdf);
 
-    case "h1": chain.toggleHeading({ level:1 }).run(); break;
-    case "h2": chain.toggleHeading({ level:2 }).run(); break;
-    case "h3": chain.toggleHeading({ level:3 }).run(); break;
-
-    case "align-left": chain.setTextAlign("left").run(); break;
-    case "align-center": chain.setTextAlign("center").run(); break;
-    case "align-right": chain.setTextAlign("right").run(); break;
-    case "align-justify": chain.setTextAlign("justify").run(); break;
-
-    case "bullet": chain.toggleBulletList().run(); break;
-    case "ordered": chain.toggleOrderedList().run(); break;
-
-    case "templates": openTemplatePopup(); break;
-  }
-}
-
-function updateToolbar() {
-  const toolbar = document.querySelector(".editor-toolbar");
-  const get = a => toolbar.querySelector(`.editor-btn[data-action="${a}"]`);
-
-  [["bold","bold"],["italic","italic"],["underline","underline"],
-   ["h1", ["heading",{level:1}]],
-   ["h2", ["heading",{level:2}]],
-   ["h3", ["heading",{level:3}]],
-   ["bullet","bulletList"],
-   ["ordered","orderedList"],
-  ].forEach(([action,test])=>{
-    const btn = get(action);
-    if(!btn) return;
-    const active = Array.isArray(test)
-      ? editor.isActive(test[0],test[1])
-      : editor.isActive(test);
-    btn.classList.toggle("active",active);
-  });
-}
-
-// ==== Templates ====
-function renderTemplatePopup() {
-  const list = document.getElementById("templateList");
-  list.innerHTML = "";
-  READY_TEMPLATES.forEach(tpl => {
-    const item = document.createElement("div");
-    item.className = "template-item";
-    item.textContent = tpl.name;
-    item.onclick = ()=>{
-      editor.commands.setContent(tpl.html);
+  document.getElementById("clearEditor")
+    .addEventListener("click", () => {
+      quill.setContents([]);
       saveDocument();
-      closeTemplatePopup();
-    };
-    list.appendChild(item);
-  });
-
-  document.getElementById("overlay").onclick = closeTemplatePopup;
+    });
 }
 
-function openTemplatePopup() {
-  document.getElementById("overlay").style.display="block";
-  document.getElementById("templatePopup").style.display="";
-}
 
-function closeTemplatePopup() {
-  document.getElementById("overlay").style.display="none";
-  document.getElementById("templatePopup").style.display="none";
-}
-
-window.closeTemplatePopup = closeTemplatePopup;
-
-// ==== Export ====
-window.editorExportPDF = function() {
-  const html = editor.getHTML();
-  const wrap = document.createElement("div");
-  wrap.innerHTML = html;
-  document.body.appendChild(wrap);
-  html2pdf().set({filename:"document.pdf"}).from(wrap).save()
-    .then(()=>wrap.remove());
-};
-
-window.editorExportDOCX = function() {
-  const html = "<html><body>"+editor.getHTML()+"</body></html>";
+// ==== Export DOCX ====
+function exportDocx() {
+  const html = `<html><body>${quill.root.innerHTML}</body></html>`;
   const blob = window.htmlDocx.asBlob(html);
-  window.saveAs(blob,"document.docx");
-};
+  window.saveAs(blob, "document.docx");
+}
+
+
+// ==== Export PDF ====
+function exportPdf() {
+  const elem = document.createElement("div");
+  elem.innerHTML = quill.root.innerHTML;
+  document.body.appendChild(elem);
+
+  html2pdf()
+    .set({ filename: "document.pdf" })
+    .from(elem)
+    .save()
+    .then(()=>elem.remove());
+}
+
+
+// ==== debounce helper ====
+function debounce(fn, ms) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(()=>fn.apply(this, args), ms);
+  };
+}
