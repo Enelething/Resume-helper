@@ -28,7 +28,13 @@
   <script src="js/auth.js"></script>
 
   <!-- Tiptap через ESM CDN -->
-  <script type="module" src="js/editor.js"></script>
+  <!-- TIPTAP (UMD) -->
+<script src="https://unpkg.com/@tiptap/core@2.0.0-beta.264/dist/tiptap-core.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/starter-kit@2.0.0-beta.264/dist/tiptap-starter-kit.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-underline@2.0.0-beta.264/dist/tiptap-extension-underline.umd.js"></script>
+<script src="https://unpkg.com/@tiptap/extension-text-align@2.0.0-beta.264/dist/tiptap-extension-text-align.umd.js"></script>
+
+<script src="js/editor.js"></script>
 </head>
 <body>
 
@@ -116,3 +122,4 @@
 
 </body>
 </html>
+
