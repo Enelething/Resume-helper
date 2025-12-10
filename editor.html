@@ -5,42 +5,86 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Редактор — ResumeHelper</title>
 
-  <!-- Общие стили сайта -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- Шрифты (Inter / Times New Roman / Roboto) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <!-- Стили редактора -->
-  <link rel="stylesheet" href="css/editor.css">
-
-  <!-- Библиотеки экспорта -->
-  <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
-
-  <!-- Firebase compat -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
   <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
 
-  <!-- Tiptap через ESM CDN -->
-  <!-- TIPTAP (UMD) -->
-<script src="https://unpkg.com/@tiptap/core@2.0.0-beta.264/dist/tiptap-core.umd.js"></script>
-<script src="https://unpkg.com/@tiptap/starter-kit@2.0.0-beta.264/dist/tiptap-starter-kit.umd.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-underline@2.0.0-beta.264/dist/tiptap-extension-underline.umd.js"></script>
-<script src="https://unpkg.com/@tiptap/extension-text-align@2.0.0-beta.264/dist/tiptap-extension-text-align.umd.js"></script>
+  <!-- Quill -->
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
 
-<script src="js/editor.js"></script>
+  <!-- Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.4.1/html-docx.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
+  <style>
+    .editor-shell {
+      display: none;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    #docTitle {
+      width: 100%;
+      font-size: 22px;
+      font-weight: 600;
+      border: none;
+      outline: none;
+      margin-bottom: 10px;
+      padding: 6px 4px;
+    }
+
+    #toolbar {
+      margin-bottom: 10px;
+    }
+    #editor {
+      background: #fff;
+      min-height: 600px;
+      border: 1px solid #ddd;
+    }
+
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.2);
+    }
+    .popup {
+      display:none;
+      position: fixed;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 300px;
+      background: #fff;
+      padding:20px;
+      border-radius:8px;
+    }
+
+    .template-item {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      cursor:pointer;
+    }
+    .template-item:hover {
+      background:#fafafa;
+    }
+  </style>
 </head>
-<body>
 
+<body>
 <header class="header">
   <div class="brand">ResumeHelper</div>
-  <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+  <div style="display:flex;gap:20px;">
     <nav class="main-nav">
       <a href="index.html">Главная</a>
       <a href="services.html">Услуги</a>
@@ -54,72 +98,58 @@
 </header>
 
 <main class="container">
-  <div id="notAuth" class="card" style="display:none;margin-top:18px;">
-    <h2 class="page-title-medium">Требуется вход</h2>
-    <p class="lead">Чтобы редактировать документ, войдите в свой аккаунт.</p>
+
+  <!-- Not authorized -->
+  <div id="notAuth">
+    <h2 style="margin-top:40px;">Авторизуйтесь чтобы редактировать документ</h2>
   </div>
 
-  <div id="editorShell" class="editor-shell" style="display:none;">
-    <div class="editor-topbar">
-      <input id="docTitle" class="editor-title-input" placeholder="Без названия">
+  <!-- Auth editor -->
+  <div id="editorShell" class="editor-shell">
+    <input id="docTitle" placeholder="Без названия">
+
+    <!-- Google Docs style toolbar -->
+    <div id="toolbar">
+      <select class="ql-header">
+        <option value="1"></option>
+        <option value="2"></option>
+        <option value="3"></option>
+        <option selected></option>
+      </select>
+      <button class="ql-bold"></button>
+      <button class="ql-italic"></button>
+      <button class="ql-underline"></button>
+
+      <button class="ql-align" value=""></button>
+      <button class="ql-align" value="center"></button>
+      <button class="ql-align" value="right"></button>
+      <button class="ql-align" value="justify"></button>
+
+      <button class="ql-list" value="bullet"></button>
+      <button class="ql-list" value="ordered"></button>
+
+      <select class="ql-font"></select>
+      <select class="ql-size"></select>
+
+      <button id="btnTemplates" type="button">📄 Шаблоны</button>
+
+      <button id="btnPDF" type="button">PDF</button>
+      <button id="btnDOCX" type="button">Word</button>
     </div>
 
-    <div class="editor-container">
-      <div class="editor-toolbar">
-
-        <button class="editor-btn" data-action="undo">↺</button>
-        <button class="editor-btn" data-action="redo">↻</button>
-
-        <button class="editor-btn" data-action="bold"><b>B</b></button>
-        <button class="editor-btn" data-action="italic"><i>I</i></button>
-        <button class="editor-btn" data-action="underline"><u>U</u></button>
-
-        <button class="editor-btn" data-action="h1">H1</button>
-        <button class="editor-btn" data-action="h2">H2</button>
-        <button class="editor-btn" data-action="h3">H3</button>
-
-        <select class="font-select" id="fontSelect">
-          <option value="Inter, system-ui">Inter</option>
-          <option value="'Times New Roman', serif">Times New Roman</option>
-          <option value="Roboto, system-ui">Roboto</option>
-        </select>
-
-        <button class="editor-btn" data-action="align-left">←</button>
-        <button class="editor-btn" data-action="align-center">⭥</button>
-        <button class="editor-btn" data-action="align-right">→</button>
-        <button class="editor-btn" data-action="align-justify">≡</button>
-
-        <button class="editor-btn" data-action="bullet">•</button>
-        <button class="editor-btn" data-action="ordered">1.</button>
-
-        <button class="editor-btn" data-action="templates">Шаблоны</button>
-      </div>
-
-      <div id="editor" class="editor-content"></div>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-      <button class="btn-primary" onclick="window.editorExportPDF()">Экспорт PDF</button>
-      <button class="btn-primary" onclick="window.editorExportDOCX()">Экспорт DOCX</button>
-    </div>
+    <div id="editor"></div>
   </div>
+
 </main>
 
-<footer class="footer container">
-  © 2025 ResumeHelper
-</footer>
+<footer class="footer container">© 2025 ResumeHelper</footer>
 
-<!-- Popup шаблонов -->
-<div id="overlay"></div>
-<div id="templatePopup" class="template-popup" style="display:none;">
-  <h3>Шаблоны документов</h3>
-  <p>Выберите подходящий шаблон — его содержимое заменит текущий текст в редакторе.</p>
-  <div id="templateList" class="template-list"></div>
-  <div class="template-popup-footer">
-    <button onclick="window.closeTemplatePopup()">Закрыть</button>
-  </div>
+<!-- Templates popup -->
+<div id="overlay" class="popup-overlay"></div>
+<div id="templatesPopup" class="popup">
+  <h3>Шаблоны</h3>
+  <div id="templatesList"></div>
+  <button onclick="closeTemplates()">Закрыть</button>
 </div>
 
-</body>
-</html>
-
+<script src="js/e
