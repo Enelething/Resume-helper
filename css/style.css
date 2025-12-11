@@ -334,3 +334,67 @@ ol {
     max-width: 360px;
   }
 }
+/* ---------------------
+   EDITOR PAGE STYLING
+---------------------- */
+
+.editor-area {
+    background: #ffffff;
+    min-height: 500px;
+    border: 1px solid #dcdcdc;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 10px;
+    font-family: inherit;
+}
+
+.toolbar-box {
+    background: #f7f7f7;
+    border: 1px solid #dcdcdc;
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.ql-toolbar {
+    border: none !important;
+}
+
+.ql-container {
+    border: none !important;
+}
+
+.editor-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* popup */
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 14px;
+    width: 450px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+}
+
+/* editor header adaptation */
+.label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
