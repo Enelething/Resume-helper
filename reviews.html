@@ -66,102 +66,143 @@
 <script src="js/auth.js"></script>
 
 <script>
+<script>
+/* Использует глобальные auth, db, CURRENT_USER, ADMINS из js/firebase-config.js и js/auth.js */
 function isAdmin(user){
   if(!user) return false;
   return (window.ADMINS || []).includes(user.email);
 }
 
-function getAllReviews(){
-  return Object.keys(localStorage)
-    .filter(k=>k.startsWith("review_"))
-    .map(k=>{
-      try{
-        const v = JSON.parse(localStorage.getItem(k));
-        v._key = k;
-        return v;
-      }catch(e){ return null;}
-    })
-    .filter(Boolean)
-    .sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+const reviewsCol = db.collection('reviews');
+
+/* Рендер одного отзыва */
+function renderReviewItem(doc, userIsAdmin){
+  const r = doc.data();
+  const id = doc.id;
+  const div = document.createElement("div");
+  div.className = "review-card";
+  const stars = "★★★★★".slice(0, r.stars || 5);
+  const date = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
+
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+      <div>
+        <div class="reviewer-name">${escapeHtml(r.userName || "Аноним")}
+          <span class="pill">${stars}</span>
+        </div>
+        <div class="muted" style="font-size:12px;">${escapeHtml(r.userEmail || "")} • ${date}</div>
+      </div>
+      ${userIsAdmin ? `<button class="delete-btn" data-id="${id}">Удалить</button>` : ""}
+    </div>
+    <div class="review-text" style="margin-top:6px;">${escapeHtml(r.text || "")}</div>
+  `;
+  return div;
 }
 
-function renderReviews(){
-  const list = document.getElementById("reviewsList");
-  const empty = document.getElementById("noReviews");
-  list.innerHTML = "";
+/* Безопасный escape (простая реализация) */
+function escapeHtml(s){
+  if(!s) return "";
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
 
-  const items = getAllReviews();
-  if(!items.length){
-    empty.style.display = "";
-    return;
-  }
-  empty.style.display = "none";
-
-  const user = window.CURRENT_USER;
-  const admin = isAdmin(user);
-
-  items.forEach(r=>{
-    const div = document.createElement("div");
-    div.className = "review-card";
-    const stars = "★★★★★".slice(0, r.stars || 5);
-
-    const date = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
-
-    div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div>
-          <div class="reviewer-name">${r.userName || "Аноним"}
-            <span class="pill">${stars}</span>
-          </div>
-          <div class="muted" style="font-size:12px;">${r.userEmail || ""} • ${date}</div>
-        </div>
-        ${admin ? `<button class="delete-btn" onclick="deleteReview('${r._key}')">Удалить</button>` : ""}
-      </div>
-      <div class="review-text" style="margin-top:6px;">${r.text || ""}</div>
-    `;
-    list.appendChild(div);
+function attachDeleteHandlers(container){
+  container.querySelectorAll(".delete-btn").forEach(btn=>{
+    btn.addEventListener("click", async (e)=>{
+      const id = e.currentTarget.getAttribute("data-id");
+      if(!confirm("Удалить отзыв?")) return;
+      try{
+        await reviewsCol.doc(id).delete();
+        // onSnapshot обновит UI
+      }catch(err){
+        console.error(err);
+        alert("Не удалось удалить отзыв: " + err.message);
+      }
+    });
   });
 }
 
-function submitReview(){
+/* РИСОВКА списка — используется onSnapshot для реального времени */
+let reviewsUnsub = null;
+function subscribeReviews(){
+  const list = document.getElementById("reviewsList");
+  const empty = document.getElementById("noReviews");
+
+  if(reviewsUnsub) reviewsUnsub();
+
+  reviewsUnsub = reviewsCol.orderBy('createdAt','desc').onSnapshot(snapshot=>{
+    list.innerHTML = "";
+    if(snapshot.empty){
+      empty.style.display = "";
+      return;
+    }
+    empty.style.display = "none";
+
+    const user = window.CURRENT_USER;
+    const userIsAdmin = isAdmin(user);
+
+    snapshot.forEach(doc=>{
+      const node = renderReviewItem(doc, userIsAdmin);
+      list.appendChild(node);
+    });
+
+    // повесим обработчики удаления (если есть кнопки)
+    attachDeleteHandlers(list);
+  }, err=>{
+    console.error("reviews onSnapshot error", err);
+    document.getElementById("noReviews").textContent = "Ошибка загрузки отзывов.";
+    document.getElementById("noReviews").style.display = "";
+  });
+}
+
+/* Отправка нового отзыва в Firestore */
+async function submitReview(){
   const user = window.CURRENT_USER;
-  if(!user){
-    return alert("Только авторизованные пользователи могут оставлять отзывы.");
-  }
-  const text = document.getElementById("reviewText").value.trim();
-  const stars = parseInt(document.getElementById("reviewStars").value, 10);
+  if(!user) return alert("Только авторизованные пользователи могут оставлять отзывы.");
+
+  const textEl = document.getElementById("reviewText");
+  const stars = parseInt(document.getElementById("reviewStars").value,10);
+  const text = textEl.value.trim();
   if(!text) return alert("Напишите текст отзыва.");
 
-  const id = Date.now();
-  const key = "review_" + id;
-  const item = {
-    id,
+  const payload = {
     uid: user.uid,
     userName: user.displayName || "Пользователь",
     userEmail: user.email || "",
     text,
     stars,
-    createdAt: id
+    createdAt: Date.now()
   };
-  localStorage.setItem(key, JSON.stringify(item));
-  document.getElementById("reviewText").value = "";
-  renderReviews();
+
+  try{
+    await reviewsCol.add(payload);
+    textEl.value = "";
+    // onSnapshot обновит UI
+  }catch(e){
+    console.error(e);
+    alert("Ошибка при отправке: " + e.message);
+  }
 }
 
-function deleteReview(key){
-  if(!confirm("Удалить отзыв?")) return;
-  localStorage.removeItem(key);
-  renderReviews();
-}
-
+/* UI реакция на смену аутентификации */
 document.addEventListener("auth-changed", e=>{
   const user = e.detail.user;
   const box = document.getElementById("addReviewBox");
   box.style.display = user ? "" : "none";
-  renderReviews();
+
+  // Подпишемся на отзывы (показываем один и тот же список для всех авторизованных)
+  subscribeReviews();
 });
 
-document.addEventListener("DOMContentLoaded", renderReviews);
+/* Инициализация при загрузке страницы: если уже залогинен, подписываемся */
+document.addEventListener("DOMContentLoaded", ()=>{
+  // прячем форму если не залогинен (auth.js выставит на auth-changed)
+  const user = window.CURRENT_USER;
+  document.getElementById("addReviewBox").style.display = user ? "" : "none";
+  subscribeReviews();
+});
+</script>
+
 </script>
 
 </body>
