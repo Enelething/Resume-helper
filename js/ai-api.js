@@ -5,7 +5,7 @@
 (function(){
   const PROXY_URL = ""; // при желании можно указать backend-прокси
 
-  const DEFAULT_KEY = "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";
+  const DEFAULT_KEY = "";
 
 function getKey(){
   let key = sessionStorage.getItem("OPENAI_KEY");
@@ -55,4 +55,5 @@ function getKey(){
   }
 
   window.aiApi = { chat, getKey };
+
 })();
